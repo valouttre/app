@@ -2,7 +2,7 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
 
   const headers = { "Accept": "application/json", "User-Agent": "Mozilla/5.0" };
-  const universeId = "7203997744";
+  const universeId = "118800055955158";
 
   try {
     const urls = [
