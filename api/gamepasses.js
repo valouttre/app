@@ -4,7 +4,7 @@ export default async function handler(req, res) {
 
   try {
 
-    // jeux publics du joueur
+    // récupérer les jeux publics
     const gamesResponse = await fetch(
       `https://games.roblox.com/v2/users/${userId}/games?accessFilter=Public&limit=50&sortOrder=Asc`
     );
@@ -17,10 +17,9 @@ export default async function handler(req, res) {
 
       try {
 
-        const universeId = game.id;
-
+        // récupérer les gamepass avec le universeId
         const passesResponse = await fetch(
-          `https://games.roblox.com/v1/games/${universeId}/game-passes?limit=100`
+          `https://games.roblox.com/v1/games/${game.rootPlace.id}/game-passes?limit=100`
         );
 
         const passesData = await passesResponse.json();
@@ -35,11 +34,11 @@ export default async function handler(req, res) {
 
         }
 
-      } catch (e) {}
+      } catch (e) {
+        console.log(e);
+      }
 
     }
-
-    res.setHeader("Access-Control-Allow-Origin", "*");
 
     return res.status(200).json({
       success: true,
