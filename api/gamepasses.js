@@ -2,18 +2,28 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
 
   const headers = { "Accept": "application/json", "User-Agent": "Mozilla/5.0" };
+  const universeId = "7203997744";
 
   try {
-    const passRes = await fetch(
-      `https://games.roproxy.com/v1/games/7203997744/game-passes?limit=100`,
-      { headers }
-    );
-    const passData = await passRes.json();
+    const urls = [
+      `https://games.roblox.com/v1/games/${universeId}/game-passes?limit=100`,
+      `https://gamepasses.roproxy.com/v1/games/${universeId}/game-passes?limit=100`,
+      `https://api.roproxy.com/v1/games/${universeId}/game-passes?limit=100`,
+      `https://games.rbxapi.com/v1/games/${universeId}/game-passes?limit=100`,
+    ];
 
-    return res.status(200).json({
-      status: passRes.status,
-      raw: passData
-    });
+    let results = [];
+    for (const url of urls) {
+      try {
+        const r = await fetch(url, { headers });
+        const text = await r.text();
+        results.push({ url, status: r.status, body: text.slice(0, 300) });
+      } catch (e) {
+        results.push({ url, error: e.message });
+      }
+    }
+
+    return res.status(200).json({ results });
 
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
