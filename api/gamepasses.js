@@ -5,18 +5,31 @@ export default async function handler(req, res) {
   const headers = { "Accept": "application/json", "User-Agent": "Mozilla/5.0" };
 
   try {
-    // Proxy au lieu de games.roblox.com
-    const gamesRes = await fetch(
+    // Essai v1
+    let gamesRes = await fetch(
       `https://games.roproxy.com/v1/users/${userId}/games?accessFilter=Public&limit=50`,
       { headers }
     );
-    const gamesData = await gamesRes.json();
-    const games = gamesData.data || [];
+    let gamesData = await gamesRes.json();
+    let games = gamesData.data || [];
 
+    // Fallback v2 si v1 vide
+    if (games.length === 0) {
+      gamesRes = await fetch(
+        `https://games.roproxy.com/v2/users/${userId}/games?accessFilter=Public&limit=50`,
+        { headers }
+      );
+      gamesData = await gamesRes.json();
+      games = gamesData.data || [];
+    }
+
+    // Debug — retire cette ligne une fois que ça marche
     if (games.length === 0) {
       return res.status(200).json({
         success: false,
-        error: "Aucun jeu public trouvé."
+        error: "Aucun jeu public trouvé.",
+        debug_v1: gamesData,
+        debug_status: gamesRes.status
       });
     }
 
