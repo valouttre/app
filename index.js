@@ -7,44 +7,56 @@ app.use(cors());
 
 app.get('/gamepasses', async (req, res) => {
   const userId = req.query.userId;
+
+  if (!userId) {
+    return res.status(400).json({ success: false, error: "userId requis" });
+  }
+
   try {
+    // Étape 1 : Jeux publics du joueur
     const gamesRes = await axios.get(
       `https://games.roproxy.com/v2/users/${userId}/games?accessFilter=Public&limit=50`
     );
     const games = gamesRes.data.data || [];
 
     if (games.length === 0) {
-      return res.json({ success: false, error: "Aucun jeu trouvé", debug: gamesRes.data });
+      return res.json({ success: false, error: "Aucun jeu public trouvé." });
     }
 
-    let debug = [];
+    let passes = [];
 
+    // Étape 2 : Game passes de chaque jeu
     for (const game of games) {
       try {
         const passRes = await axios.get(
-          `https://apis.roblox.com/game-passes/v1/universes/${game.id}/game-passes/creator`
+          `https://apis.roblox.com/game-passes/v1/universes/${game.id}/game-passes/creator`,
+          {
+            headers: {
+              "x-api-key": process.env.ROBLOX_API_KEY
+            }
+          }
         );
-        debug.push({
-          gameName: game.name,
-          gameId: game.id,
-          status: passRes.status,
-          raw: passRes.data
-        });
-      } catch (e) {
-        debug.push({
-          gameName: game.name,
-          gameId: game.id,
-          error: e.message,
-          status: e.response?.status,
-          raw: e.response?.data
-        });
-      }
+
+        for (const pass of passRes.data.gamePasses || []) {
+          if (pass.isForSale) {
+            passes.push({
+              id: pass.gamePassId,
+              name: pass.name,
+              price: pass.priceInformation?.defaultPriceInRobux ?? null,
+              icon: pass.iconAssetId,
+              gameId: game.id,
+              gameName: game.name
+            });
+          }
+        }
+      } catch (_) {}
     }
 
-    res.json({ games_found: games.length, debug });
+    return res.json({ success: true, count: passes.length, data: passes });
+
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    return res.status(500).json({ success: false, error: err.message });
   }
 });
 
-app.listen(3000, () => console.log('running'));
+app.listen(3000, () => console.log('Proxy running on port 3000'));
