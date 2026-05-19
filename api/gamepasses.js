@@ -6,7 +6,7 @@ export default async function handler(req, res) {
 
   try {
     const gamesRes = await fetch(
-      `https://develop.roproxy.com/v1/users/${userId}/games`,
+      `https://games.roproxy.com/v1/users/${userId}/games?accessFilter=Public&limit=50`,
       { headers }
     );
     const gamesData = await gamesRes.json();
@@ -20,43 +20,27 @@ export default async function handler(req, res) {
       });
     }
 
-    let passes = [];
+    let debugPasses = [];
 
     for (const game of games) {
-      try {
-        const passRes = await fetch(
-          `https://games.roproxy.com/v1/games/${game.id}/game-passes?limit=100`,
-          { headers }
-        );
-        const passData = await passRes.json();
+      const passRes = await fetch(
+        `https://games.roproxy.com/v1/games/${game.id}/game-passes?limit=100`,
+        { headers }
+      );
+      const passData = await passRes.json();
 
-        for (const pass of passData.data || []) {
-          try {
-            const infoRes = await fetch(
-              `https://apis.roproxy.com/game-passes/v1/game-passes/${pass.id}/product-info`,
-              { headers }
-            );
-            const info = await infoRes.json();
-
-            if (info.isForSale) {
-              passes.push({
-                id: pass.id,
-                name: info.name,
-                price: info.priceInRobux || 0,
-                icon: info.iconImageAssetId,
-                gameId: game.id,
-                gameName: game.name
-              });
-            }
-          } catch (_) {}
-        }
-      } catch (_) {}
+      debugPasses.push({
+        gameName: game.name,
+        gameId: game.id,
+        passStatus: passRes.status,
+        passRaw: passData
+      });
     }
 
     return res.status(200).json({
       success: true,
-      count: passes.length,
-      data: passes
+      games_found: games.length,
+      debug_passes: debugPasses
     });
 
   } catch (err) {
