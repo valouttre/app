@@ -12,29 +12,36 @@ app.get('/gamepasses', async (req, res) => {
       `https://games.roproxy.com/v2/users/${userId}/games?accessFilter=Public&limit=50`
     );
     const games = gamesRes.data.data || [];
-    let passes = [];
+
+    if (games.length === 0) {
+      return res.json({ success: false, error: "Aucun jeu trouvé", debug: gamesRes.data });
+    }
+
+    let debug = [];
 
     for (const game of games) {
       try {
         const passRes = await axios.get(
           `https://apis.roblox.com/game-passes/v1/universes/${game.id}/game-passes/creator`
         );
-        for (const pass of passRes.data.gamePasses || []) {
-          if (pass.isForSale) {
-            passes.push({
-              id: pass.gamePassId,
-              name: pass.name,
-              price: pass.priceInformation?.defaultPriceInRobux ?? null,
-              icon: pass.iconAssetId,
-              gameId: game.id,
-              gameName: game.name
-            });
-          }
-        }
-      } catch (_) {}
+        debug.push({
+          gameName: game.name,
+          gameId: game.id,
+          status: passRes.status,
+          raw: passRes.data
+        });
+      } catch (e) {
+        debug.push({
+          gameName: game.name,
+          gameId: game.id,
+          error: e.message,
+          status: e.response?.status,
+          raw: e.response?.data
+        });
+      }
     }
 
-    res.json({ success: true, count: passes.length, data: passes });
+    res.json({ games_found: games.length, debug });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
