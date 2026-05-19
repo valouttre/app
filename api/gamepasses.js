@@ -16,7 +16,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: false, error: "Aucun jeu public trouvé." });
     }
 
-    let passes = [];
+    let debugPasses = [];
 
     for (const game of games) {
       const passRes = await fetch(
@@ -25,22 +25,15 @@ export default async function handler(req, res) {
       );
       const passData = await passRes.json();
 
-      for (const pass of passData.data || []) {
-        passes.push({
-          id: pass.id,
-          name: pass.name,
-          price: pass.price ?? null,
-          gameId: game.id,
-          gameName: game.name
-        });
-      }
+      debugPasses.push({
+        gameName: game.name,
+        gameId: game.id,
+        status: passRes.status,
+        raw: passData
+      });
     }
 
-    return res.status(200).json({
-      success: true,
-      count: passes.length,
-      data: passes
-    });
+    return res.status(200).json({ games_found: games.length, debugPasses });
 
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
