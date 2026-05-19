@@ -4,48 +4,27 @@ export default async function handler(req, res) {
 
   try {
 
-    // jeux publics du joueur
-    const gamesResponse = await fetch(
-      `https://games.roblox.com/v2/users/${userId}/games?accessFilter=Public&limit=50&sortOrder=Asc`
+    const response = await fetch(
+      `https://inventory.roblox.com/v1/users/${userId}/items/GamePass?limit=100`
     );
 
-    const gamesData = await gamesResponse.json();
+    const data = await response.json();
 
-    let allPasses = [];
+    let passes = [];
 
-    for (const game of gamesData.data || []) {
+    for (const item of data.data || []) {
 
-      try {
-
-        // ICI on utilise game.id = universeId
-        const universeId = game.id;
-
-        const passesResponse = await fetch(
-          `https://games.roblox.com/v1/games/${universeId}/game-passes?limit=100`
-        );
-
-        const passesData = await passesResponse.json();
-
-        for (const pass of passesData.data || []) {
-
-          allPasses.push({
-            id: pass.id,
-            name: pass.name,
-            price: pass.price
-          });
-
-        }
-
-      } catch (e) {}
+      passes.push({
+        id: item.id,
+        name: item.name
+      });
 
     }
 
-    res.setHeader("Access-Control-Allow-Origin", "*");
-
     return res.status(200).json({
       success: true,
-      count: allPasses.length,
-      data: allPasses
+      count: passes.length,
+      data: passes
     });
 
   } catch (err) {
