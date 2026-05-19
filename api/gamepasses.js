@@ -2,63 +2,21 @@ export default async function handler(req, res) {
 
     const userId = req.query.userId;
 
-    if (!userId) {
-        return res.status(400).json({
-            success: false,
-            error: "Missing userId"
-        });
-    }
-
     try {
 
-        // récupère les expériences du joueur
-        const gamesResponse = await fetch(
-            `https://games.roblox.com/v2/users/${userId}/games?accessFilter=Public&limit=50&sortOrder=Asc`
+        const response = await fetch(
+            `https://catalog.roblox.com/v1/search/items/details?Category=3&CreatorTargetId=${userId}&CreatorType=User`
         );
 
-        const gamesData = await gamesResponse.json();
-
-        let allPasses = [];
-
-        for (const game of gamesData.data || []) {
-
-            try {
-
-                const universeId = game.id;
-
-                const passesResponse = await fetch(
-                    `https://games.roblox.com/v1/games/${universeId}/game-passes?limit=100`
-                );
-
-                const passesData = await passesResponse.json();
-
-                for (const pass of passesData.data || []) {
-
-                    allPasses.push({
-                        id: pass.id,
-                        name: pass.name,
-                        price: pass.price,
-                        image: pass.thumbnail?.imageUrl
-                    });
-
-                }
-
-            } catch (e) {}
-
-        }
+        const data = await response.json();
 
         res.setHeader("Access-Control-Allow-Origin", "*");
 
-        return res.status(200).json({
-            success: true,
-            count: allPasses.length,
-            data: allPasses
-        });
+        return res.status(200).json(data);
 
     } catch (err) {
 
         return res.status(500).json({
-            success: false,
             error: err.message
         });
 
