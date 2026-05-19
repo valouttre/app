@@ -1,13 +1,13 @@
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*"); // Toujours en premier
+  res.setHeader("Access-Control-Allow-Origin", "*");
 
   const userId = req.query.userId;
   const headers = { "Accept": "application/json", "User-Agent": "Mozilla/5.0" };
 
   try {
-    // Étape 1 : Jeux publics de l'utilisateur
+    // Proxy au lieu de games.roblox.com
     const gamesRes = await fetch(
-      `https://games.roblox.com/v1/users/${userId}/games?accessFilter=Public&limit=50`,
+      `https://games.roproxy.com/v1/users/${userId}/games?accessFilter=Public&limit=50`,
       { headers }
     );
     const gamesData = await gamesRes.json();
@@ -16,17 +16,16 @@ export default async function handler(req, res) {
     if (games.length === 0) {
       return res.status(200).json({
         success: false,
-        error: "Aucun jeu public trouvé pour cet utilisateur."
+        error: "Aucun jeu public trouvé."
       });
     }
 
-    // Étape 2 : Game passes de chaque jeu
     let passes = [];
 
     await Promise.all(
       games.map(async (game) => {
         const passRes = await fetch(
-          `https://games.roblox.com/v1/games/${game.id}/game-passes?limit=100`,
+          `https://games.roproxy.com/v1/games/${game.id}/game-passes?limit=100`,
           { headers }
         );
         const passData = await passRes.json();
