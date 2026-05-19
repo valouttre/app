@@ -11,27 +11,48 @@ export default async function handler(req, res) {
 
     try {
 
-        const response = await fetch(
-            `https://catalog.roblox.com/v1/search/items/details?Category=3&CreatorTargetId=${userId}&CreatorType=User&Limit=100`
+        // récupère les expériences du joueur
+        const gamesResponse = await fetch(
+            `https://games.roblox.com/v2/users/${userId}/games?accessFilter=Public&limit=50&sortOrder=Asc`
         );
 
-        const json = await response.json();
+        const gamesData = await gamesResponse.json();
 
-        const gamepasses = (json.data || []).map(item => ({
-            id: item.id,
-            name: item.name,
-            price: item.price,
-            productId: item.productId,
-            image: item.thumbnail,
-            forSale: item.priceStatus === "On Sale"
-        }));
+        let allPasses = [];
+
+        for (const game of gamesData.data || []) {
+
+            try {
+
+                const universeId = game.id;
+
+                const passesResponse = await fetch(
+                    `https://games.roblox.com/v1/games/${universeId}/game-passes?limit=100`
+                );
+
+                const passesData = await passesResponse.json();
+
+                for (const pass of passesData.data || []) {
+
+                    allPasses.push({
+                        id: pass.id,
+                        name: pass.name,
+                        price: pass.price,
+                        image: pass.thumbnail?.imageUrl
+                    });
+
+                }
+
+            } catch (e) {}
+
+        }
 
         res.setHeader("Access-Control-Allow-Origin", "*");
 
         return res.status(200).json({
             success: true,
-            count: gamepasses.length,
-            data: gamepasses
+            count: allPasses.length,
+            data: allPasses
         });
 
     } catch (err) {
