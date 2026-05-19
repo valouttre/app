@@ -5,11 +5,11 @@ export default async function handler(req, res) {
   const headers = { "Accept": "application/json", "User-Agent": "Mozilla/5.0" };
 
   try {
-    // Catalog roproxy — game passes par créateur
+    // assetType=34 = Game Passes
     const urls = [
-      `https://catalog.roproxy.com/v1/search/items/details?Category=1&Subcategory=7&CreatorTargetId=${userId}&CreatorType=User&limit=30`,
-      `https://games.roproxy.com/v1/users/${userId}/items/GamePass?limit=100`,
-      `https://inventory.roproxy.com/v1/users/${userId}/items/GamePass?limit=100`
+      `https://catalog.roproxy.com/v1/search/items/details?Category=1&assetType=34&CreatorTargetId=${userId}&CreatorType=User&limit=30`,
+      `https://catalog.roproxy.com/v1/search/items/details?Category=2&CreatorTargetId=${userId}&CreatorType=User&limit=30`,
+      `https://catalog.roproxy.com/v1/search/items?Category=1&assetType=34&CreatorTargetId=${userId}&CreatorType=User&limit=30`
     ];
 
     let results = [];
