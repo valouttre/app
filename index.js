@@ -20,6 +20,7 @@ app.get('/gamepasses', async (req, res) => {
 
   try {
 
+    // Jeux publics
     const gamesRes = await axios.get(
       `https://games.roblox.com/v2/users/${userId}/games?accessFilter=Public&limit=50`
     );
@@ -29,15 +30,16 @@ app.get('/gamepasses', async (req, res) => {
     let passes = [];
 
     await Promise.all(
+
       games.map(async (game) => {
 
         try {
 
           const passRes = await axios.get(
-            `https://games.roblox.com/v1/games/${game.id}/game-passes`
+            `https://apis.roblox.com/game-passes/v1/universes/${game.id}/game-passes?passView=Full&pageSize=100`
           );
 
-          const gamepasses = passRes.data.data || [];
+          const gamepasses = passRes.data.gamePasses || [];
 
           for (const pass of gamepasses) {
 
@@ -45,9 +47,11 @@ app.get('/gamepasses', async (req, res) => {
 
             passes.push({
               id: pass.id,
-              name: pass.name,
+              productId: pass.productId,
+              name: pass.displayName || pass.name,
               price: pass.price,
-              icon: pass.iconImageAssetId || null,
+              creator: pass.creator?.name || null,
+              creatorId: pass.creator?.creatorId || null,
               gameId: game.id,
               gameName: game.name
             });
@@ -55,15 +59,28 @@ app.get('/gamepasses', async (req, res) => {
           }
 
         } catch (err) {
-          console.log(`Erreur ${game.id}:`, err.message);
+
+          console.log(
+            `Erreur game ${game.id}:`,
+            err.response?.status || err.message
+          );
+
         }
 
       })
+
     );
 
+    // Retire doublons
+    passes = passes.filter(
+      (pass, index, self) =>
+        index === self.findIndex(p => p.id === pass.id)
+    );
+
+    // Tri prix
     passes.sort((a, b) => a.price - b.price);
 
-    res.json({
+    return res.json({
       success: true,
       count: passes.length,
       data: passes
@@ -71,7 +88,7 @@ app.get('/gamepasses', async (req, res) => {
 
   } catch (err) {
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: err.message
     });
